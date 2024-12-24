@@ -1,0 +1,45 @@
+function copySheetAndDeleteRows() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sourceSheet = ss.getSheets()[0];
+  var currentDate = new Date();
+  var formattedDate = Utilities.formatDate(currentDate, Session.getScriptTimeZone(), "dd-MM-yyyy");
+  var sheetName = formattedDate;
+  var existingSheet = ss.getSheetByName(sheetName);
+  if (existingSheet) {
+    sheetName = formattedDate + " (Chiều)";
+  }
+  var newSheet = ss.insertSheet(sheetName);
+  var range = sourceSheet.getDataRange();
+  var values = range.getValues();
+  
+  var seenB = new Set();
+  var filteredByB = values.filter((row, index) => {
+    if (index === 0) return true;
+    if (!seenB.has(row[1])) {
+      seenB.add(row[1]);
+      return true;
+    }
+    return false;
+  });
+  
+  var seenC = new Set();
+  var filteredByBAndC = filteredByB.filter((row, index) => {
+    if (index === 0) return true;
+    if (!seenC.has(row[2])) {
+      seenC.add(row[2]);
+      return true;
+    }
+    return false;
+  });
+  
+  newSheet.getRange(1, 1, filteredByBAndC.length, filteredByBAndC[0].length).setValues(filteredByBAndC);
+  var numColumns = filteredByBAndC[0].length;
+  newSheet.autoResizeColumns(1, numColumns);
+  
+  var lastRow = sourceSheet.getLastRow();
+  if (lastRow > 1) {
+    for (var i = lastRow; i > 1; i--) {
+      sourceSheet.deleteRow(i);
+    }
+  }
+}
